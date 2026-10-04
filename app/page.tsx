@@ -36,7 +36,7 @@ function TikTokIcon({ className = '' }: { className?: string }) {
 export default function Home() {
   const [showSubscribe, setShowSubscribe] = useState(false)
   const [email, setEmail] = useState('')
-  const [subscribeState, setSubscribeState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [subscribeState, setSubscribeState] = useState<'idle' | 'loading' | 'success' | 'duplicate' | 'error'>('idle')
   const [scrollY, setScrollY] = useState(0)
 
   async function handleSubscribe(event: React.FormEvent<HTMLFormElement>) {
@@ -49,7 +49,8 @@ export default function Home() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email, source: 'homepage' }),
       })
-      setSubscribeState(response.ok ? 'success' : 'error')
+      const result = await response.json().catch(() => null)
+      setSubscribeState(response.ok ? (result?.alreadySubscribed ? 'duplicate' : 'success') : 'error')
       if (response.ok) setEmail('')
     } catch {
       setSubscribeState('error')
@@ -94,7 +95,8 @@ export default function Home() {
                 <button type="submit" disabled={subscribeState === 'loading'} className="rounded-full bg-[#c28b61] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#101a2b] transition hover:bg-[#edb17a] disabled:cursor-wait disabled:opacity-60">{subscribeState === 'loading' ? 'Joining' : 'Join'}</button>
               </div>
               <p id="subscribe-status" aria-live="polite" className="mt-3 text-xs text-white/75">
-                {subscribeState === 'success' && 'You are on the list. Welcome to the practice.'}
+                {subscribeState === 'success' && "You're on the list. Welcome to the practice."}
+                {subscribeState === 'duplicate' && 'Already on the list. Welcome back to the practice.'}
                 {subscribeState === 'error' && 'We could not subscribe you. Please check your email and try again.'}
               </p>
             </form>

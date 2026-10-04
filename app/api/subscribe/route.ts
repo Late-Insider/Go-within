@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         .single()
 
       if (error) throw error
-      return Response.json({ subscribed: true, created: false, subscriber }, { headers: { 'cache-control': 'no-store' } })
+      return Response.json({ subscribed: true, created: false, alreadySubscribed: true, message: 'Already on the list. Welcome back to the practice.', subscriber }, { headers: { 'cache-control': 'no-store' } })
     }
 
     const { data: subscriber, error } = await supabase

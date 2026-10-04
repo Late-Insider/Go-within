@@ -35,7 +35,26 @@ function TikTokIcon({ className = '' }: { className?: string }) {
 
 export default function Home() {
   const [showSubscribe, setShowSubscribe] = useState(false)
+  const [email, setEmail] = useState('')
+  const [subscribeState, setSubscribeState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [scrollY, setScrollY] = useState(0)
+
+  async function handleSubscribe(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubscribeState('loading')
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, source: 'homepage' }),
+      })
+      setSubscribeState(response.ok ? 'success' : 'error')
+      if (response.ok) setEmail('')
+    } catch {
+      setSubscribeState('error')
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -68,12 +87,16 @@ export default function Home() {
             <ArrowDownRight className={`size-4 transition-transform ${showSubscribe ? 'rotate-90' : ''}`} strokeWidth={1.5} />
           </button>
           <div className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${showSubscribe ? 'mt-5 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'}`}>
-            <form className="min-h-0 overflow-hidden" onSubmit={(event) => event.preventDefault()}>
+            <form className="min-h-0 overflow-hidden" onSubmit={handleSubscribe}>
               <div className="flex w-[min(90vw,26rem)] items-center rounded-full border border-white/30 bg-[#071525]/35 p-1.5 backdrop-blur-md">
                 <label htmlFor="email" className="sr-only">Email address</label>
-                <input id="email" type="email" required placeholder="Your email address" className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-white outline-none placeholder:text-white/45" />
-                <button type="submit" className="rounded-full bg-[#c28b61] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#101a2b] transition hover:bg-[#edb17a]">Join</button>
+                <input id="email" name="email" type="email" required value={email} onChange={(event) => { setEmail(event.target.value); setSubscribeState('idle') }} placeholder="Your email address" aria-describedby="subscribe-status" className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm text-white outline-none placeholder:text-white/45" />
+                <button type="submit" disabled={subscribeState === 'loading'} className="rounded-full bg-[#c28b61] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#101a2b] transition hover:bg-[#edb17a] disabled:cursor-wait disabled:opacity-60">{subscribeState === 'loading' ? 'Joining' : 'Join'}</button>
               </div>
+              <p id="subscribe-status" aria-live="polite" className="mt-3 text-xs text-white/75">
+                {subscribeState === 'success' && 'You are on the list. Welcome to the practice.'}
+                {subscribeState === 'error' && 'We could not subscribe you. Please check your email and try again.'}
+              </p>
             </form>
           </div>
         </div>

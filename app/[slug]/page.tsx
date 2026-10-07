@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { NavigationDrawer } from '@/components/navigation-drawer'
+import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
 
 const pages: Record<string, string> = {
   'our-story': 'Our Story',
@@ -13,9 +14,22 @@ export function generateStaticParams() {
   return Object.keys(pages).map((slug) => ({ slug }))
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const title = pages[slug] ?? 'The Practice'
+  const essay = slug === 'echo'
+    ? (await createAdminClient()
+        .from('essays')
+        .select(publicEssayFields())
+        .eq('status', 'published')
+        .not('published_at', 'is', null)
+        .lte('published_at', new Date().toISOString())
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()).data
+    : null
 
   return (
     <main className="relative flex min-h-svh overflow-hidden bg-[#071525] text-white">
@@ -28,8 +42,18 @@ export default async function PlaceholderPage({ params }: { params: Promise<{ sl
       <section className="absolute inset-0 flex items-center justify-center px-6 text-center">
         <div className="hero-content flex max-w-2xl flex-col items-center">
           <p className="mb-7 text-[10px] uppercase tracking-[0.42em] text-[#c28b61]">The Practice</p>
-          <h1 className="font-serif text-[clamp(3.5rem,10vw,8rem)] font-light leading-none tracking-[-0.06em]">{title}</h1>
-          <p className="mt-8 text-sm font-light leading-7 text-white/65 sm:text-base">Content arriving tomorrow. Welcome to the practice.</p>
+          {essay ? (
+            <article className="max-w-3xl text-left">
+              <h1 className="font-serif text-[clamp(3rem,8vw,7rem)] font-light leading-none tracking-[-0.06em]">{essay.title}</h1>
+              {essay.excerpt ? <p className="mt-8 text-base font-light leading-7 text-white/70 sm:text-lg">{essay.excerpt}</p> : null}
+              <div className="mt-8 whitespace-pre-wrap text-sm font-light leading-8 text-white/75 sm:text-base">{essay.body}</div>
+            </article>
+          ) : (
+            <>
+              <h1 className="font-serif text-[clamp(3.5rem,10vw,8rem)] font-light leading-none tracking-[-0.06em]">{title}</h1>
+              <p className="mt-8 text-sm font-light leading-7 text-white/65 sm:text-base">Content arriving tomorrow. Welcome to the practice.</p>
+            </>
+          )}
           <Link href="/" className="mt-10 border-b border-[#c28b61] pb-2 text-[10px] uppercase tracking-[0.3em] text-[#edb17a] transition hover:text-white">Return home</Link>
         </div>
       </section>

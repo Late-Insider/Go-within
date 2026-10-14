@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { NavigationDrawer } from '@/components/navigation-drawer'
 import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
@@ -15,6 +16,24 @@ export function generateStaticParams() {
 }
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  if (slug === 'echo') {
+    return {
+      title: 'Echo — Stories to enter. Questions to carry. | GO WITHIN',
+      description: 'Original fiction and reflective essays from the unfolding universe of GO WITHIN.',
+      alternates: { canonical: '/echo' },
+      openGraph: {
+        title: 'Echo — Stories to enter. Questions to carry.',
+        description: 'Original fiction and reflective essays from GO WITHIN.',
+        url: '/echo',
+        type: 'article',
+      },
+    }
+  }
+  return { title: `${pages[slug] ?? 'The Practice'} | GO WITHIN`, alternates: { canonical: `/${slug}` } }
+}
 
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -39,22 +58,23 @@ export default async function PlaceholderPage({ params }: { params: Promise<{ sl
         <Link href="/" className="text-[11px] font-medium uppercase tracking-[0.34em] text-white/90 transition hover:text-[#edb17a]">Go Within</Link>
         <NavigationDrawer />
       </header>
-      <section className="absolute inset-0 flex items-center justify-center px-6 text-center">
-        <div className="hero-content flex max-w-2xl flex-col items-center">
-          <p className="mb-7 text-[10px] uppercase tracking-[0.42em] text-[#c28b61]">The Practice</p>
+      <section className="relative z-10 mx-auto flex min-h-svh w-full max-w-6xl items-center px-6 pb-20 pt-32 sm:px-10 lg:px-16">
+        <div className="hero-content w-full">
+          <p className="mb-8 text-[10px] uppercase tracking-[0.42em] text-[#d7a47a]">Echo / Original writing</p>
           {essay ? (
-            <article className="max-w-3xl text-left">
-              <h1 className="font-serif text-[clamp(3rem,8vw,7rem)] font-light leading-none tracking-[-0.06em]">{essay.title}</h1>
-              {essay.excerpt ? <p className="mt-8 text-base font-light leading-7 text-white/70 sm:text-lg">{essay.excerpt}</p> : null}
-              <div className="mt-8 whitespace-pre-wrap text-sm font-light leading-8 text-white/75 sm:text-base">{essay.body}</div>
+            <article className="max-w-3xl">
+              <h1 className="font-serif text-[clamp(3.25rem,8vw,7.5rem)] font-light italic leading-[0.9] tracking-[-0.06em] text-white">{essay.title}</h1>
+              {essay.excerpt ? <p className="mt-9 max-w-2xl border-l border-[#c28b61] pl-5 text-lg font-light leading-8 text-white/75 sm:text-xl sm:leading-9">{essay.excerpt}</p> : null}
+              <div className="mt-12 max-w-2xl whitespace-pre-wrap text-base font-light leading-8 text-white/78 sm:text-lg sm:leading-9">{essay.body}</div>
             </article>
           ) : (
-            <>
-              <h1 className="font-serif text-[clamp(3.5rem,10vw,8rem)] font-light leading-none tracking-[-0.06em]">{title}</h1>
-              <p className="mt-8 text-sm font-light leading-7 text-white/65 sm:text-base">Content arriving tomorrow. Welcome to the practice.</p>
-            </>
+            <article className="max-w-2xl">
+              <h1 className="font-serif text-[clamp(4rem,10vw,8rem)] font-light italic leading-[0.9] tracking-[-0.06em]">Echo</h1>
+              <p className="mt-8 max-w-lg text-lg font-light leading-8 text-white/70">Stories to enter. Questions to carry.</p>
+              <p className="mt-4 max-w-lg text-sm font-light leading-7 text-white/55">Original fiction and reflective essays are finding their way here.</p>
+            </article>
           )}
-          <Link href="/" className="mt-10 border-b border-[#c28b61] pb-2 text-[10px] uppercase tracking-[0.3em] text-[#edb17a] transition hover:text-white">Return home</Link>
+          <Link href="/" className="mt-14 inline-flex border-b border-[#c28b61] pb-2 text-[10px] uppercase tracking-[0.3em] text-[#edb17a] transition hover:text-white">Return to Go Within</Link>
         </div>
       </section>
     </main>

@@ -6,10 +6,7 @@ import { useEffect, useState } from 'react'
 
 const links = [
   { label: 'Our Story', href: '/our-story' },
-  { label: 'Echo (Daily Essay)', href: '/echo' },
-  { label: 'Gallery', href: '/gallery' },
-  { label: 'Initiatives', href: '/initiatives' },
-  { label: 'Partnerships', href: '/partnerships' },
+  { label: 'Echo', href: '/echo' },
 ]
 
 export function NavigationDrawer() {

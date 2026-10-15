@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { NavigationDrawer } from '@/components/navigation-drawer'
 import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
 
@@ -37,18 +38,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const title = pages[slug] ?? 'The Practice'
-  const essay = slug === 'echo'
-    ? (await createAdminClient()
-        .from('essays')
-        .select(publicEssayFields())
-        .eq('status', 'published')
-        .not('published_at', 'is', null)
-        .lte('published_at', new Date().toISOString())
-        .order('published_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()).data
-    : null
+  const essay = (await createAdminClient()
+    .from('essays')
+    .select(publicEssayFields())
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', new Date().toISOString())
+    .maybeSingle()).data
+
+  if (!pages[slug] && !essay) notFound()
+
+  const title = essay?.title ?? pages[slug] ?? 'The Practice'
 
   return (
     <main className="relative flex min-h-svh overflow-hidden bg-[#071525] text-white">

@@ -114,7 +114,10 @@ export default function Home() {
       </section>
 
       <footer className="absolute bottom-7 left-6 right-6 z-10 flex items-end justify-between text-[10px] uppercase tracking-[0.28em] text-white/55 sm:bottom-9 sm:left-10 sm:right-10 lg:left-16 lg:right-16">
-        <span>Stories to enter</span>
+        <div className="flex items-center gap-4">
+          <span>Stories to enter</span>
+          <a href="/privacy" className="transition hover:text-white">Privacy</a>
+        </div>
         <div className="flex items-center gap-4 normal-case tracking-normal text-white/65">
           <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Follow Go Within on X" className="transition hover:text-white"><X className="size-4" strokeWidth={1.5} /></a>
           <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Follow Go Within on Instagram" className="transition hover:text-white"><InstagramIcon className="size-4" /></a>

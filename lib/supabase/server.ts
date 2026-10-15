@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -53,11 +54,35 @@ export function publicEssay(essay: Essay) {
   return { ...essay }
 }
 
+const siteUrl = 'https://gowithin.app'
+
+export function createUnsubscribeToken(subscriberId: string) {
+  const payload = Buffer.from(JSON.stringify({ subscriberId, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 90 })).toString('base64url')
+  const signature = createHmac('sha256', process.env.SUPABASE_SECRET_KEY ?? '').update(payload).digest('base64url')
+  return `${payload}.${signature}`
+}
+
+export function verifyUnsubscribeToken(token: string) {
+  const [payload, signature] = token.split('.')
+  if (!payload || !signature) return null
+  const expected = createHmac('sha256', process.env.SUPABASE_SECRET_KEY ?? '').update(payload).digest()
+  const received = Buffer.from(signature, 'base64url')
+  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return null
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { subscriberId?: string; expiresAt?: number }
+    return parsed.subscriberId && parsed.expiresAt && parsed.expiresAt > Date.now() ? parsed.subscriberId : null
+  } catch { return null }
+}
+
+export function unsubscribeUrl(subscriberId: string) {
+  return `${siteUrl}/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(subscriberId))}`
+}
+
 export async function notifySubscriberCreated(subscriber: Subscriber) {
   const url = process.env.POWER_AUTOMATE_SUBSCRIBER_WEBHOOK_URL
   if (!url) return
   try {
-    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp }), cache: 'no-store' })
+    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp, unsubscribe_url: unsubscribeUrl(subscriber.id), privacy_url: `${siteUrl}/privacy` }), cache: 'no-store' })
   } catch { /* webhook delivery is retried by the future automation layer */ }
 }
 

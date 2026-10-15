@@ -71,7 +71,7 @@ export function NavigationDrawer() {
               </Link>
             ))}
           </nav>
-          <p className="max-w-xs text-xs font-light leading-6 text-white/45">A quiet place for reflection, attention, and the return to what is already here.</p>
+          <p className="max-w-xs text-xs font-light leading-6 text-white/45">Stories to enter. Questions to carry. Original writing for curious minds and open doors.</p>
         </aside>
       </div>
     </>

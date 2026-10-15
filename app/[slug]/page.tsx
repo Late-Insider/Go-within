@@ -38,14 +38,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const essay = (await createAdminClient()
-    .from('essays')
-    .select(publicEssayFields())
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .not('published_at', 'is', null)
-    .lte('published_at', new Date().toISOString())
-    .maybeSingle()).data
+  const hasSupabaseConfig = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
+  )
+  const essay = hasSupabaseConfig
+    ? (await createAdminClient()
+        .from('essays')
+        .select(publicEssayFields())
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .not('published_at', 'is', null)
+        .lte('published_at', new Date().toISOString())
+        .maybeSingle()).data
+    : null
 
   if (!pages[slug] && !essay) notFound()
 

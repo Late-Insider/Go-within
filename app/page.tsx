@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowDownRight, X } from 'lucide-react'
 import { NavigationDrawer } from '@/components/navigation-drawer'
+import { GingerbreadHouse } from '@/components/gingerbread-house'
 
 function BronzeKeyMark({ className = '' }: { className?: string }) {
   return (
@@ -82,7 +83,7 @@ export default function Home() {
         <div className="hero-content flex max-w-3xl flex-col items-center">
           <p className="mb-6 text-[10px] uppercase tracking-[0.42em] text-[#d7a47a]">Go Within</p>
           <h1 className="font-serif text-[clamp(4rem,14vw,10rem)] font-light italic leading-[0.82] tracking-[-0.075em] text-white drop-shadow-[0_4px_28px_rgba(0,0,0,0.35)]">Some doors<br /><span className="not-italic">open inward.</span></h1>
-          <p className="mt-8 max-w-xl text-base font-light leading-8 text-white/78 sm:text-lg sm:leading-9">An unfolding universe of stories, questions, and unexpected encounters.<br className="hidden sm:block" /> Explore imagined worlds, discover unfamiliar perspectives, and find something worth carrying beyond the page.</p>
+          <p className="mt-8 max-w-xl text-base font-light leading-8 text-white/78 sm:text-lg sm:leading-9">An unfolding universe of stories, questions, and unexpected encounters.<br className="hidden sm:block" /> A place for imagination, curiosity, and the discoveries that begin when we choose to look closer.</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <a href="/echo" className="inline-flex items-center gap-4 rounded-full border border-white/50 bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#101a2b] shadow-[0_8px_36px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#101a2b]">Enter Echo <ArrowDownRight className="size-4" strokeWidth={1.5} /></a>
             <a href="/our-story" className="inline-flex items-center rounded-full border border-white/35 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/90 transition hover:border-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Our Story</a>
@@ -93,7 +94,8 @@ export default function Home() {
             <p className="mt-3 text-sm font-light leading-6 text-white/65">Original fiction and reflective essays that invite curiosity, contemplation, and discovery.</p>
             <a href="/echo" className="mt-4 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-[#edb17a] transition hover:text-white">Explore Echo <ArrowDownRight className="size-3" strokeWidth={1.5} /></a>
           </div>
-          <button type="button" onClick={() => setShowSubscribe((current) => !current)} className="mt-10 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70 underline decoration-white/30 underline-offset-8 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Join the letter</button>
+          <button type="button" onClick={() => setShowSubscribe((current) => !current)} className="mt-10 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/70 underline decoration-white/30 underline-offset-8 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Stay Near the Story</button>
+          <GingerbreadHouse />
           <div className={`grid transition-[grid-template-rows,opacity,margin] duration-700 ease-out ${showSubscribe ? 'mt-5 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'}`}>
             <form className="min-h-0 overflow-hidden" onSubmit={handleSubscribe}>
               <div className="flex w-[min(90vw,26rem)] items-center rounded-full border border-white/30 bg-[#071525]/35 p-1.5 backdrop-blur-md">

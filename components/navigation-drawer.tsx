@@ -52,7 +52,7 @@ export function NavigationDrawer() {
           className={`drawer-panel absolute right-0 top-0 z-[101] flex h-full w-[min(88vw,31rem)] flex-col bg-[#071525] px-7 py-7 text-white shadow-[-20px_0_80px_rgba(0,0,0,0.35)] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-12 sm:py-10 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
           <div className="flex items-center justify-between border-b border-white/10 pb-7">
-            <span className="text-[10px] uppercase tracking-[0.38em] text-[#c28b61]">The Practice</span>
+            <span className="text-[10px] uppercase tracking-[0.38em] text-[#c28b61]">Explore Go Within</span>
             <button type="button" onClick={() => setIsOpen(false)} className="flex size-11 items-center justify-center rounded-full border border-white/20 text-white/75 transition hover:border-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Close navigation">
               <X className="size-5" strokeWidth={1.5} />
             </button>

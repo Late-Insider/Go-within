@@ -63,21 +63,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const title = pages[slug] ?? 'The Practice'
-  const essay = !pages[slug] ? await getPublishedEssay(slug) : slug === 'echo' && hasSupabaseConfig()
-    ? (await createAdminClient()
-        .from('essays')
-        .select(publicEssayFields())
-        .eq('status', 'published')
-        .not('published_at', 'is', null)
-        .lte('published_at', new Date().toISOString())
-        .order('published_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()).data
-    : null
+  const essay = !pages[slug] || slug === 'echo' ? await getPublishedEssay(slug) : null
 
   if (!pages[slug] && !essay) notFound()
 
+  const title = essay?.title ?? pages[slug] ?? 'The Practice'
   return (
     <main className="relative flex min-h-svh overflow-hidden bg-[#071525] text-white">
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,100,61,0.18),transparent_32%),linear-gradient(135deg,#071525_0%,#10162c_55%,#24152a_100%)]" />

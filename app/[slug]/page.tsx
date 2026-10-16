@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { NavigationDrawer } from '@/components/navigation-drawer'
-import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
+import { createAdminClient, hasSupabaseConfig, publicEssayFields } from '@/lib/supabase/server'
 
 const pages: Record<string, string> = {
   'our-story': 'Our Story',
@@ -19,6 +19,7 @@ export function generateStaticParams() {
 export const dynamic = 'force-dynamic'
 
 async function getPublishedEssay(slug: string) {
+  if (!hasSupabaseConfig()) return null
   const { data, error } = await createAdminClient()
     .from('essays')
     .select(publicEssayFields())
@@ -63,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const title = pages[slug] ?? 'The Practice'
-  const essay = !pages[slug] ? await getPublishedEssay(slug) : slug === 'echo'
+  const essay = !pages[slug] ? await getPublishedEssay(slug) : slug === 'echo' && hasSupabaseConfig()
     ? (await createAdminClient()
         .from('essays')
         .select(publicEssayFields())

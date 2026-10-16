@@ -2,19 +2,35 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+function supabaseUrl() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+}
+
+function supabasePublishableKey() {
+  return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+}
+
+function supabaseSecretKey() {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+}
+
+export function hasSupabaseConfig() {
+  return Boolean(supabaseUrl() && supabaseSecretKey())
+}
+
 export async function createClient() {
   const cookieStore = await cookies()
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl(),
+    supabasePublishableKey(),
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   )
 }
 
 export function createAdminClient() {
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
+    supabaseUrl(),
+    supabaseSecretKey(),
     { cookies: { getAll: () => [], setAll: () => {} } },
   )
 }
@@ -247,7 +263,7 @@ export function field<T>(record: Record<string, unknown>, name: string) { return
 
 export function apiHeaders() { return { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } }
 
-export function publicEssayFields() { return 'id,title,slug,excerpt,body,cover_image_url,status,publish_at,published_at' }
+export function publicEssayFields() { return 'id,title,slug,excerpt,body,cover_image_url,status,publish_at,published_at' as const }
 
 export function subscriberFields() { return 'id,email,source,consent_timestamp' }
 

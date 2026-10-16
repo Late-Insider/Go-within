@@ -115,8 +115,15 @@ export async function notifySubscriberCreated(subscriber: Subscriber) {
 }
 
 export function isAuthorized(request: Request) {
-  const secret = process.env.POWER_AUTOMATE_PUBLISH_SECRET
-  return Boolean(secret && request.headers.get('authorization') === `Bearer ${secret}`)
+  const secret = process.env.POWER_AUTOMATE_PUBLISH_SECRET?.trim()
+  const authorization = request.headers.get('authorization')?.trim()
+  if (!secret || !authorization) return false
+
+  const separator = authorization.indexOf(' ')
+  if (separator <= 0) return false
+  const scheme = authorization.slice(0, separator)
+  const credential = authorization.slice(separator + 1).trim()
+  return scheme.toLowerCase() === 'bearer' && credential === secret
 }
 
 export function isUuid(value: unknown): value is string {

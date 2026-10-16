@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       </header>
       <article className="mx-auto max-w-3xl px-6 pb-24 pt-20 sm:px-10 lg:px-16">
         <p className="text-[10px] uppercase tracking-[0.42em] text-[#c28b61]">GO WITHIN / PRIVACY</p>
-        <h1 className="mt-8 font-serif text-[clamp(4rem,10vw,7rem)] font-light italic leading-[.9] tracking-[-.06em]">Privacy</h1>
+        <h1 className="mt-8 font-serif text-[clamp(4rem,10vw,7rem)] font-light italic leading-[.9] tracking-[-0.06em]">Privacy</h1>
         <div className="mt-16 space-y-8 text-base leading-8 text-[#d9cbbd]/75">
           <h2 className="font-serif text-3xl font-light italic text-[#f3eadc]">Your Trust Matters.</h2>
           <p>Your curiosity belongs to you. So does your information.</p>
@@ -35,3 +35,5 @@ export default function PrivacyPage() {
     </main>
   )
 }
+
+export const dynamic = 'force-static'

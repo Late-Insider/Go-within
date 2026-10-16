@@ -2,19 +2,35 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+function supabaseUrl() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+}
+
+function supabasePublishableKey() {
+  return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+}
+
+function supabaseSecretKey() {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+}
+
+export function hasSupabaseConfig() {
+  return Boolean(supabaseUrl() && supabaseSecretKey())
+}
+
 export async function createClient() {
   const cookieStore = await cookies()
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl(),
+    supabasePublishableKey(),
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   )
 }
 
 export function createAdminClient() {
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
+    supabaseUrl(),
+    supabaseSecretKey(),
     { cookies: { getAll: () => [], setAll: () => {} } },
   )
 }
@@ -54,35 +70,39 @@ export function publicEssay(essay: Essay) {
   return { ...essay }
 }
 
-const siteUrl = 'https://gowithin.app'
+function unsubscribeSecret() {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+}
 
-export function createUnsubscribeToken(subscriberId: string) {
-  const payload = Buffer.from(JSON.stringify({ subscriberId, expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 90 })).toString('base64url')
-  const signature = createHmac('sha256', process.env.SUPABASE_SECRET_KEY ?? '').update(payload).digest('base64url')
-  return `${payload}.${signature}`
+export function createUnsubscribeToken(subscriber: Pick<Subscriber, 'id' | 'email'>) {
+  const payload = `${subscriber.id}.${subscriber.email}`
+  const signature = createHmac('sha256', unsubscribeSecret()).update(payload).digest('base64url')
+  return Buffer.from(`${payload}.${signature}`).toString('base64url')
 }
 
 export function verifyUnsubscribeToken(token: string) {
-  const [payload, signature] = token.split('.')
-  if (!payload || !signature) return null
-  const expected = createHmac('sha256', process.env.SUPABASE_SECRET_KEY ?? '').update(payload).digest()
-  const received = Buffer.from(signature, 'base64url')
-  if (received.length !== expected.length || !timingSafeEqual(received, expected)) return null
   try {
-    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { subscriberId?: string; expiresAt?: number }
-    return parsed.subscriberId && parsed.expiresAt && parsed.expiresAt > Date.now() ? parsed.subscriberId : null
-  } catch { return null }
+    const decoded = Buffer.from(token, 'base64url').toString('utf8')
+    const [id, email, signature] = decoded.split('.')
+    if (!id || !email || !signature) return null
+    const expected = createHmac('sha256', unsubscribeSecret()).update(`${id}.${email}`).digest('base64url')
+    if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null
+    return { id, email }
+  } catch {
+    return null
+  }
 }
 
-export function unsubscribeUrl(subscriberId: string) {
-  return `${siteUrl}/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(subscriberId))}`
+export function subscriberUnsubscribeUrl(subscriber: Pick<Subscriber, 'id' | 'email'>) {
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://gowithin.app'
+  return `${origin}/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(subscriber))}`
 }
 
 export async function notifySubscriberCreated(subscriber: Subscriber) {
   const url = process.env.POWER_AUTOMATE_SUBSCRIBER_WEBHOOK_URL
   if (!url) return
   try {
-    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp, unsubscribe_url: unsubscribeUrl(subscriber.id), privacy_url: `${siteUrl}/privacy` }), cache: 'no-store' })
+    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp, unsubscribe_url: subscriberUnsubscribeUrl(subscriber), privacy_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://gowithin.app'}/privacy` }), cache: 'no-store' })
   } catch { /* webhook delivery is retried by the future automation layer */ }
 }
 
@@ -243,7 +263,7 @@ export function field<T>(record: Record<string, unknown>, name: string) { return
 
 export function apiHeaders() { return { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } }
 
-export function publicEssayFields() { return 'id,title,slug,excerpt,body,cover_image_url,status,publish_at,published_at' }
+export function publicEssayFields() { return 'id,title,slug,excerpt,body,cover_image_url,status,publish_at,published_at' as const }
 
 export function subscriberFields() { return 'id,email,source,consent_timestamp' }
 

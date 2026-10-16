@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { NavigationDrawer } from '@/components/navigation-drawer'
-import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
+import { createAdminClient, hasSupabaseConfig, publicEssayFields } from '@/lib/supabase/server'
 
 const pages: Record<string, string> = {
   'our-story': 'Our Story',
@@ -18,8 +18,33 @@ export function generateStaticParams() {
 
 export const dynamic = 'force-dynamic'
 
+async function getPublishedEssay(slug: string) {
+  if (!hasSupabaseConfig()) return null
+  const { data, error } = await createAdminClient()
+    .from('essays')
+    .select(publicEssayFields())
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', new Date().toISOString())
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
+  if (!pages[slug]) {
+    const essay = await getPublishedEssay(slug)
+    if (!essay) return { title: 'Not found | GO WITHIN' }
+    return {
+      title: `${essay.title} | Echo — GO WITHIN`,
+      description: essay.excerpt ?? `Read ${essay.title} in Echo, the literary publication from GO WITHIN.`,
+      alternates: { canonical: `/${essay.slug}` },
+      openGraph: { title: essay.title, description: essay.excerpt ?? undefined, url: `/${essay.slug}`, type: 'article' },
+    }
+  }
   if (slug === 'echo') {
     return {
       title: 'Echo — Stories to enter. Questions to carry. | GO WITHIN',
@@ -38,25 +63,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const hasSupabaseConfig = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      (process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
-  )
-  const essay = hasSupabaseConfig
-    ? (await createAdminClient()
-        .from('essays')
-        .select(publicEssayFields())
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .not('published_at', 'is', null)
-        .lte('published_at', new Date().toISOString())
-        .maybeSingle()).data
-    : null
+  const essay = !pages[slug] || slug === 'echo' ? await getPublishedEssay(slug) : null
 
   if (!pages[slug] && !essay) notFound()
 
   const title = essay?.title ?? pages[slug] ?? 'The Practice'
-
   return (
     <main className="relative flex min-h-svh overflow-hidden bg-[#071525] text-white">
       <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,100,61,0.18),transparent_32%),linear-gradient(135deg,#071525_0%,#10162c_55%,#24152a_100%)]" />

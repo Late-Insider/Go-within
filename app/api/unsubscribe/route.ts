@@ -2,10 +2,14 @@ import { createAdminClient, noStoreHeaders, verifyUnsubscribeToken } from '@/lib
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
-  const subscriberId = verifyUnsubscribeToken(typeof body?.token === 'string' ? body.token : '')
-  if (!subscriberId) return Response.json({ error: 'Invalid or expired unsubscribe link.' }, { status: 400, headers: noStoreHeaders() })
+  const subscriber = verifyUnsubscribeToken(typeof body?.token === 'string' ? body.token : '')
+  if (!subscriber) return Response.json({ error: 'Invalid or expired unsubscribe link.' }, { status: 400, headers: noStoreHeaders() })
 
-  const { error } = await createAdminClient().from('subscribers').update({ status: 'unsubscribed', unsubscribe_at: new Date().toISOString() }).eq('id', subscriberId)
+  const { error } = await createAdminClient()
+    .from('subscribers')
+    .update({ status: 'unsubscribed', unsubscribe_at: new Date().toISOString() })
+    .eq('id', subscriber.id)
+    .eq('email', subscriber.email)
   if (error) {
     if (process.env.NODE_ENV !== 'production') console.error('[v0] Unsubscribe failed', error)
     return Response.json({ error: 'Unable to unsubscribe right now.' }, { status: 500, headers: noStoreHeaders() })

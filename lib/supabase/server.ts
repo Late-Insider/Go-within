@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -53,11 +54,39 @@ export function publicEssay(essay: Essay) {
   return { ...essay }
 }
 
+function unsubscribeSecret() {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+}
+
+export function createUnsubscribeToken(subscriber: Pick<Subscriber, 'id' | 'email'>) {
+  const payload = `${subscriber.id}.${subscriber.email}`
+  const signature = createHmac('sha256', unsubscribeSecret()).update(payload).digest('base64url')
+  return Buffer.from(`${payload}.${signature}`).toString('base64url')
+}
+
+export function verifyUnsubscribeToken(token: string) {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf8')
+    const [id, email, signature] = decoded.split('.')
+    if (!id || !email || !signature) return null
+    const expected = createHmac('sha256', unsubscribeSecret()).update(`${id}.${email}`).digest('base64url')
+    if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null
+    return { id, email }
+  } catch {
+    return null
+  }
+}
+
+export function subscriberUnsubscribeUrl(subscriber: Pick<Subscriber, 'id' | 'email'>) {
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://gowithin.app'
+  return `${origin}/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(subscriber))}`
+}
+
 export async function notifySubscriberCreated(subscriber: Subscriber) {
   const url = process.env.POWER_AUTOMATE_SUBSCRIBER_WEBHOOK_URL
   if (!url) return
   try {
-    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp }), cache: 'no-store' })
+    await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'subscriber.created', subscriber_id: subscriber.id, email: subscriber.email, source: subscriber.source, consent_timestamp: subscriber.consent_timestamp, unsubscribe_url: subscriberUnsubscribeUrl(subscriber), privacy_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://gowithin.app'}/privacy` }), cache: 'no-store' })
   } catch { /* webhook delivery is retried by the future automation layer */ }
 }
 

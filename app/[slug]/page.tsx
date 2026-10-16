@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { NavigationDrawer } from '@/components/navigation-drawer'
 import { createAdminClient, publicEssayFields } from '@/lib/supabase/server'
 
@@ -17,8 +18,32 @@ export function generateStaticParams() {
 
 export const dynamic = 'force-dynamic'
 
+async function getPublishedEssay(slug: string) {
+  const { data, error } = await createAdminClient()
+    .from('essays')
+    .select(publicEssayFields())
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', new Date().toISOString())
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
+  if (!pages[slug]) {
+    const essay = await getPublishedEssay(slug)
+    if (!essay) return { title: 'Not found | GO WITHIN' }
+    return {
+      title: `${essay.title} | Echo — GO WITHIN`,
+      description: essay.excerpt ?? `Read ${essay.title} in Echo, the literary publication from GO WITHIN.`,
+      alternates: { canonical: `/${essay.slug}` },
+      openGraph: { title: essay.title, description: essay.excerpt ?? undefined, url: `/${essay.slug}`, type: 'article' },
+    }
+  }
   if (slug === 'echo') {
     return {
       title: 'Echo — Stories to enter. Questions to carry. | GO WITHIN',
@@ -38,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const title = pages[slug] ?? 'The Practice'
-  const essay = slug === 'echo'
+  const essay = !pages[slug] ? await getPublishedEssay(slug) : slug === 'echo'
     ? (await createAdminClient()
         .from('essays')
         .select(publicEssayFields())
@@ -49,6 +74,8 @@ export default async function PlaceholderPage({ params }: { params: Promise<{ sl
         .limit(1)
         .maybeSingle()).data
     : null
+
+  if (!pages[slug] && !essay) notFound()
 
   return (
     <main className="relative flex min-h-svh overflow-hidden bg-[#071525] text-white">

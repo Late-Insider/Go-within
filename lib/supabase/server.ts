@@ -82,10 +82,18 @@ export function createUnsubscribeToken(subscriber: Pick<Subscriber, 'id' | 'emai
 
 export function verifyUnsubscribeToken(token: string) {
   try {
+    const secret = unsubscribeSecret()
+    if (!secret || !token) return null
+
     const decoded = Buffer.from(token, 'base64url').toString('utf8')
-    const [id, email, signature] = decoded.split('.')
-    if (!id || !email || !signature) return null
-    const expected = createHmac('sha256', unsubscribeSecret()).update(`${id}.${email}`).digest('base64url')
+    const firstSeparator = decoded.indexOf('.')
+    const lastSeparator = decoded.lastIndexOf('.')
+    if (firstSeparator <= 0 || lastSeparator <= firstSeparator || lastSeparator === decoded.length - 1) return null
+
+    const id = decoded.slice(0, firstSeparator)
+    const email = decoded.slice(firstSeparator + 1, lastSeparator)
+    const signature = decoded.slice(lastSeparator + 1)
+    const expected = createHmac('sha256', secret).update(`${id}.${email}`).digest('base64url')
     if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null
     return { id, email }
   } catch {
